@@ -12,6 +12,7 @@ var attachment = require('./api/attachment');
 var auditing = require('./api/auditing');
 var auth = require('./api/auth');
 var avatar = require('./api/avatar');
+var backlog = require('./api/backlog');
 var board = require('./api/board');
 var comment = require('./api/comment');
 var component = require('./api/component');
@@ -28,6 +29,7 @@ var issueLink = require('./api/issueLink');
 var issueLinkType = require('./api/issueLinkType');
 var issueType = require('./api/issueType');
 var jql = require('./api/jql');
+var labels = require('./api/labels');
 var licenseRole = require('./api/licenseRole');
 var licenseValidator = require('./api/licenseValidator');
 var myPermissions = require('./api/myPermissions');
@@ -35,12 +37,15 @@ var myPreferences = require('./api/myPreferences');
 var myself = require('./api/myself');
 var oauth_util = require('./lib/oauth_util');
 var password = require('./api/password');
+var permissions = require('./api/permissions');
+var permissionScheme = require('./api/permission-scheme');
 var priority = require('./api/priority');
 var project = require('./api/project');
 var projectCategory = require('./api/projectCategory');
 var projectValidate = require('./api/projectValidate');
 var reindex = require('./api/reindex');
 var resolution = require('./api/resolution');
+var roles = require('./api/roles');
 var screens = require('./api/screens');
 var search = require('./api/search');
 var securityLevel = require('./api/securityLevel');
@@ -82,18 +87,22 @@ var worklog = require('./api/worklog');
  * @property {IssueLinkTypeClient} issueLinkType
  * @property {IssueTypeClient} issueType
  * @property {JqlClient} jql
+ * @property {LabelsClient} labels
  * @property {LicenseRoleClient} licenseRole
  * @property {LicenseValidatorClient} licenseValidator
  * @property {MyPermissionsClient} myPermissions
  * @property {MyPreferencesClient} myPreferences
  * @property {MyselfClient} myself
  * @property {PasswordClient} password
+ * @property {PermissionsClient} permissions
+ * @property {PermissionSchemeClient} permissionScheme
  * @property {PriorityClient} priority
  * @property {ProjectCategoryClient} projectCategory
  * @property {ProjectClient} project
  * @property {ProjectValidateClient} projectValidate
  * @property {ReindexClient} reindex
  * @property {ResolutionClient} resolution
+ * @property {RoleClient} roles
  * @property {ScreensClient} screens
  * @property {SearchClient} search
  * @property {SecurityLevelClient} securityLevel
@@ -148,6 +157,7 @@ var JiraClient = module.exports = function (config) {
     this.webhookApiVersion = '1.0';
     this.promise = config.promise || Promise;
     this.requestLib = config.request || request;
+    this.rejectUnauthorized = config.rejectUnauthorized;
 
     if (config.oauth) {
         if (!config.oauth.consumer_key) {
@@ -191,6 +201,7 @@ var JiraClient = module.exports = function (config) {
     this.auditing = new auditing(this);
     this.auth = new auth(this);
     this.avatar = new avatar(this);
+    this.backlog = new backlog(this);
     this.board = new board(this);
     this.comment = new comment(this);
     this.component = new component(this);
@@ -206,18 +217,22 @@ var JiraClient = module.exports = function (config) {
     this.issueLinkType = new issueLinkType(this);
     this.issueType = new issueType(this);
     this.jql = new jql(this);
+    this.labels = new labels(this);
     this.licenseRole = new licenseRole(this);
     this.licenseValidator = new licenseValidator(this);
     this.myPermissions = new myPermissions(this);
     this.myPreferences = new myPreferences(this);
     this.myself = new myself(this);
     this.password = new password(this);
+    this.permissions = new permissions(this);
+    this.permissionScheme = new permissionScheme(this);
     this.priority = new priority(this);
     this.project = new project(this);
     this.projectCategory = new projectCategory(this);
     this.projectValidate = new projectValidate(this);
     this.reindex = new reindex(this);
     this.resolution = new resolution(this);
+    this.roles = new roles(this);
     this.screens = new screens(this);
     this.search = new search(this);
     this.securityLevel = new securityLevel(this);
@@ -242,11 +257,12 @@ var JiraClient = module.exports = function (config) {
      * @method buildURL
      * @memberOf JiraClient#
      * @param path The path of the URL without concern for the root of the REST API.
+     * @param forcedVersion Use this param to force a particular version
      * @returns {string} The constructed URL.
      */
-    this.buildURL = function (path) {
+    this.buildURL = function (path, forcedVersion) {
         var apiBasePath = this.path_prefix + 'rest/api/';
-        var version = this.apiVersion;
+        var version = forcedVersion || this.apiVersion;
         var requestUrl = url.format({
             protocol: this.protocol,
             hostname: this.host,
@@ -332,6 +348,7 @@ var JiraClient = module.exports = function (config) {
      */
     this.makeRequest = function (options, callback, successString) {
         let requestLib = this.requestLib;
+        options.rejectUnauthorized = this.rejectUnauthorized;
 
         if (this.oauthConfig) {
             options.oauth = this.oauthConfig;
@@ -369,6 +386,11 @@ var JiraClient = module.exports = function (config) {
             return new this.promise(function (resolve, reject) {
 
                 var req = requestLib(options);
+                var requestObj = null;
+
+                req.on('request', function(request) {
+                  requestObj = request;
+                });
 
                 req.on('response', function(response) {
 
@@ -396,11 +418,41 @@ var JiraClient = module.exports = function (config) {
 
                         if (error) {
                             response.body = result;
-                            reject(JSON.stringify(response));
+                            if (options.debug) {
+                              reject({
+                                result: JSON.stringify(response),
+                                debug: {
+                                  options: options,
+                                  request: {
+                                    headers: requestObj._headers,
+                                  },
+                                  response: {
+                                    headers: response.headers,
+                                  },
+                                }
+                              });
+                            } else {
+                              reject(JSON.stringify(response));
+                            }
                             return;
                         }
 
+                      if (options.debug) {
+                        resolve({
+                          result,
+                          debug: {
+                            options: options,
+                            request: {
+                              headers: requestObj._headers,
+                            },
+                            response: {
+                              headers: response.headers,
+                            },
+                          }
+                        });
+                      } else {
                         resolve(result);
+                      }
                     });
 
                 });

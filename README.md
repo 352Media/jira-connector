@@ -264,9 +264,18 @@ is still valid!
   * getAvatars
   * createTemporaryAvatar
   * cropTemporaryAvatar
+* backlog (/rest/agile/1.0/backlog)
+  * moveIssuesToBacklog
+  * moveIssuesToBacklogForBoard
 * board (/rest/agile/1.0/board)
   * getAllBoards
+  * createBoard
   * getBoard
+  * deleteBoard
+  * getIssuesForBacklog
+  * getConfiguration
+  * getEpics
+  * getIssuesWithoutEpic
   * getIssuesForBoard
   * getSprintsForBoard
 * comment (/rest/api/2/comment)
@@ -299,12 +308,13 @@ is still valid!
   * getDefaultShareScope
   * setDefaultShareScope
   * getFavoriteFilters
-* group (/rest/api/2/group) (Experimental)
+* group (/rest/api/2/group)
   * createGroup
-  * getGroup
+  * getGroup [DEPRECATED, use getMembers]
   * addUserToGroup
   * removeUserFromGroup
   * deleteGroup
+  * getMembers
 * groups (/rest/api/2/groups)
   * findGroups
 * groupUserPicker (/rest/api/2/groupuserpicker)
@@ -352,6 +362,7 @@ is still valid!
   * setProperty
   * getProperty
   * deleteProperty
+  * getIssuePicker
 * issueLink (/rest/api/2/issueLink)
   * createIssueLink
   * getIssueLink
@@ -365,8 +376,14 @@ is still valid!
 * issueType (/rest/api/2/issuetype)
   * getAllIssueTypes
   * getIssueType
+  * createIssueType
+  * deleteIssueType
+  * updateIssueType
+  * getAlternativeIssueTypes
 * jql (/rest/api/2/jql/autocompletedata)
   * getAutoCompleteData
+* labels (/rest/api/1.0/labels/suggest?query=)
+  * getLabels
 * licenseRole (/rest/api/2/licenserole)
   * getAllLicenseRoles
   * getLicenseRole
@@ -385,6 +402,18 @@ is still valid!
   * changePassword
 * password (/rest/api/2/password)
   * getPasswordPolicy
+* permissions (/rest/api/2/permissions)
+  * getAllPermissions
+* permissionScheme (/rest/api/2/permissionscheme)
+ * getAllPermissionSchemes
+ * createPermissionScheme
+ * getPermissionScheme
+ * editPermissionScheme
+ * deletePermissionScheme
+ * getPermissionSchemeGrants
+ * createPermissionGrantInScheme
+ * deletePermissionGrantFromScheme
+ * getPermissionSchemeGrantById
 * priority (/rest/api/2/priority)
   * getAllPriorities
   * getPriority
@@ -409,6 +438,15 @@ is still valid!
 * resolution (/rest/api/2/resolution)
   * getAllResolutions
   * getResolution
+* roles (/rest/api/2/role) (a.k.a. ProjectRoles)
+  * getAll
+  * createRole
+  * getRoleById
+  * updateRole
+  * deleteRole
+  * getActors
+  * addActors
+  * removeActor
 * screens (/rest/api/2/screens)
   * getAvailableFields
   * getTabs
@@ -510,6 +548,10 @@ is still valid!
   * getDraftWorkflow
   * editDraftWorkflow
   * deleteDraftWorkflow
+* worklog (/rest/api/2/worklog)
+  * getWorklogDeleted
+  * worklogList
+  * getWorklogUpdated
 
 ## License
 
